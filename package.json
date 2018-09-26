@@ -1,0 +1,21 @@
+{
+  "name": "bowsette",
+  "version": "1.0.0",
+  "description": "crawler to get bowsette",
+  "main": "bowsette.js",
+  "scripts": {
+    "test": "test",
+    "start": "node bowsette.js"
+  },
+  "author": "cvmcosta",
+  "license": "ISC",
+  "dependencies": {
+    "follow-redirects": "^1.5.8",
+    "form-data": "^2.3.2",
+    "got": "^9.2.2",
+    "hamsters.js": "^5.1.1",
+    "jsdom": "^12.0.0",
+    "mkdirp": "^0.5.1",
+    "twit": "^2.2.11"
+  }
+}
