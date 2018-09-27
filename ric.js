@@ -70,7 +70,16 @@ function retrieve(url, numPages, section){
     imgCount = 0;
     if(section == '/new/'){
         entrypoint = entrypoint+'/new/';
+        mkdirp(subreddit+'/'+'new', function(err){
+            if (err) console.error(err);
+        }); 
+    }else{
+        mkdirp(subreddit+'/'+'hot', function(err){
+            if (err) console.error(err);
+        }); 
     }
+
+    
     getThem(entrypoint);
 }
 
@@ -194,9 +203,7 @@ function getImage(imageurl,type, imagename){
     var ext = imageurl.split(".");
     ext = ext.pop();
    
-    mkdirp(subreddit+'/'+type, function(err){
-        if (err) console.error(err);
-    }); 
+    
     imagename = imagename.replace("/", "-");
     imagename = imagename.replace("’","'");
     imagename = imagename.replace("’","'");
