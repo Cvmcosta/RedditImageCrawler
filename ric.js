@@ -26,6 +26,7 @@ var entrypoint = 'https://old.reddit.com/r/bowsette';
 var subreddit = 'bowsette';
 var baseurl = 'https://old.reddit.com';
 var type = '';
+var albumCount = 10;
 
 //arguments management
 var args = process.argv.slice(2);
@@ -39,6 +40,12 @@ if(args.indexOf('r')>-1){
 if(args.indexOf('p')>-1){
     if(args[args.indexOf('p')+1]){
         count = parseInt(args[args.indexOf('p')+1]);
+    }
+        
+}
+if(args.indexOf('a')>-1){
+    if(args[args.indexOf('a')+1]){
+        albumCount = parseInt(args[args.indexOf('a')+1]);
     }
         
 }
@@ -60,13 +67,14 @@ var options = {
 
 
 //start
-retrieve(subreddit, count, type)
+retrieve(subreddit, count, type, albumCount)
 
 
 //initial call to the subreddit
-function retrieve(url, numPages, section){
+function retrieve(url, numPages, section, albumImgs){
     entrypoint = baseurl +'/r/'+url;
     count = numPages;
+    albumCount = albumImgs;
     imgCount = 0;
     if(section == '/new/'){
         entrypoint = entrypoint+'/new/';
@@ -101,33 +109,56 @@ function parseResponse(response){
         var curAdress;
         links.forEach(function(element, index, array){
             curAdress = element.getAttribute('href');
-            if(curAdress.indexOf('/r/')!=-1){
+            
+            if(curAdress.indexOf('imgur.com')!=-1){
+                if(curAdress.indexOf('/a/')!=-1){    
+                    console.log('Externo (Imgur Album) - '+element.textContent+' -> '+curAdress);
+                    enterImgurAlbum(curAdress, element.textContent)
+                }
+                else if(curAdress.indexOf('/r/')!=-1){    
+                    console.log('Externo (Imgur Post) - '+element.textContent+' -> '+curAdress);
+                    enterImgurPost(curAdress, element.textContent)
+                }
+                else{
+                    //checking if it is post or direct link to image
+
+                    var aux_str = curAdress.split("com");
+                    aux_str = aux_str.pop();
+
+                    if(aux_str.indexOf(".")!=-1){
+                        
+                        console.log('Externo (Imgur) - '+element.textContent+' -> '+curAdress);
+                        if(type == '/new/'){
+                            getImage(curAdress, 'new', element.textContent);
+                        }else{
+                            getImage(curAdress, 'hot', element.textContent);
+                        }
+                    }else{
+                        console.log('Externo (Imgur Page) - '+element.textContent+' -> '+curAdress);
+                        enterImgurPage(curAdress, element.textContent)
+
+                    }
+
+                }
+                
+            }
+            else if(curAdress.indexOf('gfycat.com')!=-1){
+                
+                console.log('Externo (GFY) - '+element.textContent+' -> '+curAdress);
+                enterGFYPost(curAdress, element.textContent)
+            }
+            else if(curAdress.indexOf('/r/')!=-1){
                 //Mount the url and enter next page to retrieve from there;
                 if(curAdress.indexOf('reddit.com')==-1){
                     curAdress = baseurl+curAdress;
                 }
                 
                 console.log('Interno - '+element.textContent+' -> '+curAdress);
-                imgCount = imgCount+1;
+                
                 enterRedditPost(curAdress)
             }
-            else if(curAdress.indexOf('imgur.com')!=-1){
-                imgCount = imgCount+1;
-                console.log('Externo (Imgur) - '+element.textContent+' -> '+curAdress);
-                if(type == '/new/'){
-                    getImage(curAdress, 'new', element.textContent);
-                }else{
-                    getImage(curAdress, 'hot', element.textContent);
-                }
-            }
-            else if(curAdress.indexOf('gfycat.com')!=-1){
-                imgCount = imgCount+1;
-                console.log('Externo (GFY) - '+element.textContent+' -> '+curAdress);
-                enterGFYPost(curAdress, element.textContent)
-            }
             else{
-                //Try to find extension and get image (If no extension is found then just enter page and try to get it but dont really waste too much on it)
-                console.log('Externo -> '+curAdress);
+                console.log('Externo(unsupported) -> '+curAdress);
             }
         
         })
@@ -155,6 +186,27 @@ function enterGFYPost(url, name){
     url = encodeURI(url);
     got(url,options)
         .then(response => getImageFromGFY(response.body, name))
+        .catch(error => { if(error.statusCode==429){console.log("TOO MANY REQUESTS ERROR. RETRYING(?) = > "+error.path)}else{console.log(error)}});
+}
+
+function enterImgurPost(url, name){
+    url = encodeURI(url);
+    got(url)
+        .then(response => getImageFromImgur(response.body, name))
+        .catch(error => { if(error.statusCode==429){console.log("TOO MANY REQUESTS ERROR. RETRYING(?) = > "+error.path)}else{console.log(error)}});
+}
+
+function enterImgurAlbum(url, name){
+    url = encodeURI(url);
+    got(url)
+        .then(response => getImageFromImgurAlbum(response.body, name))
+        .catch(error => { if(error.statusCode==429){console.log("TOO MANY REQUESTS ERROR. RETRYING(?) = > "+error.path)}else{console.log(error)}});
+}
+
+function enterImgurPage(url, name){
+    url = encodeURI(url);
+    got(url)
+        .then(response => getImageFromImgurPage(response.body, name))
         .catch(error => { if(error.statusCode==429){console.log("TOO MANY REQUESTS ERROR. RETRYING(?) = > "+error.path)}else{console.log(error)}});
 }
 
@@ -196,13 +248,136 @@ function getImageFromGFY(response, name){
     }  
 }
 
+function getImageFromImgur(response, name){
+    var page = new JSDOM(response);
+    
+    var curAdress;
+    var imgnum = 1;
+
+    var hashes = response.indexOf('"images":[');
+    if(hashes!=-1){
+        hashes = hashes+9;
+        var aux = '';
+        var auxStr = '';
+        while(aux!="]"){
+            aux = response[hashes++]
+            auxStr = auxStr+aux;
+        }
+        console.log(auxStr);
+        var jsonImgs = JSON.parse(auxStr);
+        
+        console.log("\tIMAGE FROM IMGUR POST -> " + name+" -DATA lenght: "+jsonImgs.length);
+
+        for(var i = 0; i<jsonImgs.length; i++){
+        
+        
+        
+            curAdress = "https://i.imgur.com/"+jsonImgs[i].hash+jsonImgs[i].ext;
+            if(type == '/new/'){
+                getImage(curAdress, 'new', name+imgnum);
+            }else{
+                getImage(curAdress, 'hot', name+imgnum);
+            }
+            imgnum = imgnum+1;
+
+        
+        } 
+    }else{
+        console.log("\tNAO ACHOU HASHES POST "+name);
+    }
+    
+}
+
+function getImageFromImgurAlbum(response, name){
+    var page = new JSDOM(response);
+    
+    var curAdress;
+    var imgnum = 1;
+    var imgcounter = albumCount;
+    
+    
+    var hashes = response.indexOf('"images":[');
+    if(hashes!=-1){
+        hashes = hashes+9;
+        var aux = '';
+        var auxStr = '';
+        while(aux!="]"){
+            aux = response[hashes++]
+            auxStr = auxStr+aux;
+        }
+        console.log(auxStr);
+        var jsonImgs = JSON.parse(auxStr);
+        
+        //console.log("TAMANHO: "+jsonAux.length);
+        //console.log("PRIMEIRO: "+jsonAux[0].hash);
+
+        console.log("\tIMAGE FROM IMGUR ALBUM -> " + name+" -DATA lenght: "+jsonImgs.length);
+        for(var i = 0; i<jsonImgs.length; i++){
+        
+            if(imgcounter<=0){
+                break;
+            }
+        
+            curAdress = "https://i.imgur.com/"+jsonImgs[i].hash+jsonImgs[i].ext;
+            if(type == '/new/'){
+                getImage(curAdress, 'new', name+imgnum);
+            }else{
+                getImage(curAdress, 'hot', name+imgnum);
+            }
+            imgnum = imgnum+1;
+            imgcounter = imgcounter - 1; 
+        
+        } 
+    }else{
+        console.log("\tNAO ACHOU HASHES ALBUM "+name);
+    }
+}
+
+function getImageFromImgurPage(response, name){
+    var page = new JSDOM(response);
+    
+    var curAdress;
+    var imgnum = 1;
+
+    var hashes = response.indexOf('"images":[');
+    if(hashes!=-1){
+        hashes = hashes+9;
+        var aux = '';
+        var auxStr = '';
+        while(aux!="]"){
+            aux = response[hashes++]
+            auxStr = auxStr+aux;
+        }
+        console.log(auxStr);
+        var jsonImgs = JSON.parse(auxStr);
+        
+        console.log("\tIMAGE FROM IMGUR PAGE -> " + name+" -DATA lenght: "+jsonImgs.length);
+        for(var i = 0; i<jsonImgs.length; i++){
+        
+        
+        
+            curAdress = "https://i.imgur.com/"+jsonImgs[i].hash+jsonImgs[i].ext;
+            if(type == '/new/'){
+                getImage(curAdress, 'new', name+imgnum);
+            }else{
+                getImage(curAdress, 'hot', name+imgnum);
+            }
+            imgnum = imgnum+1;
+
+        
+        } 
+    }else{
+        console.log("\tNAO ACHOU HASHES PAGE "+ name);
+    }
+}
+
 
 
 
 function getImage(imageurl,type, imagename){
     var ext = imageurl.split(".");
     ext = ext.pop();
-   
+    imgCount = imgCount+1;
     
     imagename = imagename.replace("/", "-");
     imagename = imagename.replace("’","'");

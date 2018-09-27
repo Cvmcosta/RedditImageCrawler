@@ -86,6 +86,25 @@ $ npm install redditimagecrawler
     ``` 
     ./ric n
     ```
+- **Album** 
+    
+    Tells the tool what's the maximum number of images it can download from a certain Imgur album.  
+    *Example:* 800.  
+    ***Default:*** 10.  
+
+
+
+    Usage on cli:  
+
+    js file:    
+    ``` 
+    ric.js a 30
+    ```
+
+    compiled:    
+    ``` 
+    ./ric a 30
+    ```
     
 
 ### NodeJs from source
@@ -95,13 +114,16 @@ const ric = require('redditimagecrawler');
 //Name of the subreddit you want to access
 var subreddit = "bowsette";
 
-//Amount of pages you want to go through default = 3
+//Amount of pages you want to go through
 var pageCount = 4;
 
 //Type of sorting (hottest - "/hot/" or newest - "/new/")
 var sort = "/new/";
 
-ric.retrieve(subreddit, pageCount, sort);
+//Max of album images download per album acessed
+var albumImg = 80;
+
+ric.retrieve(subreddit, pageCount, sort, albumImg);
 
 
 ```
