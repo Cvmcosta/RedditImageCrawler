@@ -13,9 +13,38 @@ const jsdom = require("jsdom");
 const { JSDOM } = jsdom;
 //folder stuff
 const mkdirp = require('mkdirp');
+//utf8 stuff
+const utf8 = require('utf8');
 
 
 
+
+//Initializing variables defaults
+var count = 3;
+var imgCount = 0;//counts images for debugging purposes
+var entrypoint = 'https://old.reddit.com/r/bowsette';
+var subreddit = 'bowsette';
+var baseurl = 'https://old.reddit.com';
+var type = '';
+
+//arguments management
+var args = process.argv.slice(2);
+
+if(args.indexOf('r')>-1){
+    if(args[args.indexOf('r')+1]){
+        entrypoint = baseurl +'/r/'+ args[args.indexOf('r')+1];
+        subreddit = args[args.indexOf('r')+1];
+    }
+}
+if(args.indexOf('p')>-1){
+    if(args[args.indexOf('p')+1]){
+        count = parseInt(args[args.indexOf('p')+1]);
+    }
+        
+}
+if(args.indexOf('n')>-1){
+        type = '/new/';
+}
 
 
 
@@ -28,42 +57,100 @@ var options = {
     }
 }
 
-var entrypoint = 'https://old.reddit.com/r/bowsette';
-var baseurl = 'https://old.reddit.com';
+
+
+//start
+retrieve(subreddit, count, type)
+
+
 //initial call to the subreddit
-got(entrypoint,options)
+function retrieve(url, numPages, section){
+    entrypoint = baseurl +'/r/'+url;
+    count = numPages;
+    imgCount = 0;
+    if(section == '/new/'){
+        entrypoint = entrypoint+'/new/';
+    }
+    getThem(entrypoint);
+}
+
+
+
+
+function getThem(url){
+    url = encodeURI(url);
+    got(url,options)
         .then(response => parseResponse(response.body))
-        .catch(error => { console.log( error); });
-
-
+        .catch(error => { if(error.statusCode==429){console.log("TOO MANY REQUESTS ERROR. RETRYING(?) = > "+error.path)}else{console.log(error)} });
+}   
 //hanlde initial return (the first page)
 function parseResponse(response){
-
-    var page = new JSDOM(response);
-    var links = page.window.document.querySelectorAll(".thing .title>a");
-    var curAdress;
-    links.forEach(function(element, index, array){
-        curAdress = element.getAttribute('href');
-        if(curAdress.indexOf('/r/')!=-1){
-            //Mount the url and enter next page to retrieve from there;
-            curAdress = baseurl+curAdress;
-            console.log('Interno -> '+curAdress);
-            enterRedditPost(curAdress)
-        }else{
-            //Try to find extension and get image (If no extension is found then just enter page and try to get it but dont really waste too much on it)
-            console.log('Externo -> '+curAdress);
+    if(count > 0){
+        count = count-1;
+        var page = new JSDOM(response);
+        var links = page.window.document.querySelectorAll(".thing .title>a");
+        var curAdress;
+        links.forEach(function(element, index, array){
+            curAdress = element.getAttribute('href');
+            if(curAdress.indexOf('/r/')!=-1){
+                //Mount the url and enter next page to retrieve from there;
+                if(curAdress.indexOf('reddit.com')==-1){
+                    curAdress = baseurl+curAdress;
+                }
+                
+                console.log('Interno - '+element.textContent+' -> '+curAdress);
+                imgCount = imgCount+1;
+                enterRedditPost(curAdress)
+            }
+            else if(curAdress.indexOf('i.imgur.com')!=-1){
+                imgCount = imgCount+1;
+                console.log('Externo (Imgur) - '+element.textContent+' -> '+curAdress);
+                if(type == '/new/'){
+                    getImage(curAdress, 'new', element.textContent);
+                }else{
+                    getImage(curAdress, 'hot', element.textContent);
+                }
+            }
+            else if(curAdress.indexOf('gfycat.com')!=-1){
+                imgCount = imgCount+1;
+                console.log('Externo (GFY) - '+element.textContent+' -> '+curAdress);
+                enterGFYPost(curAdress, element.textContent)
+            }
+            else{
+                //Try to find extension and get image (If no extension is found then just enter page and try to get it but dont really waste too much on it)
+                console.log('Externo -> '+curAdress);
+            }
+        
+        })
+        var next =  page.window.document.querySelector(".next-button>a");
+        if(next){
+            next = page.window.document.querySelector(".next-button>a").getAttribute('href');
+            getThem(next);
         }
-    
-    })
+
+    }else{
+        console.log("IMAGENS: "+imgCount);
+    }
     
 }   
 
 
 function enterRedditPost(url){
+    url = encodeURI(url);
     got(url,options)
         .then(response => getImageFromPost(response.body))
-        .catch(error => { console.log( error); });
+        .catch(error => { if(error.statusCode==429){console.log("TOO MANY REQUESTS ERROR. RETRYING(?) = > "+error.path)}else{console.log(error)}});
 }
+
+function enterGFYPost(url, name){
+    url = encodeURI(url);
+    got(url,options)
+        .then(response => getImageFromGFY(response.body, name))
+        .catch(error => { if(error.statusCode==429){console.log("TOO MANY REQUESTS ERROR. RETRYING(?) = > "+error.path)}else{console.log(error)}});
+}
+
+
+
 
 function getImageFromPost(response){
     var page = new JSDOM(response);
@@ -71,19 +158,49 @@ function getImageFromPost(response){
     if(link){
         var image_name = page.window.document.querySelector("a.title").textContent;
         var image_link = page.window.document.querySelector(".media-preview-content>a").getAttribute('href');
-        getImage(image_link, 'hot', image_name);
-        console.log('\tImage link -> '+image_link);
-    }
-    
-
+       
+        
+        if(type == '/new/'){
+            getImage(image_link, 'new', image_name);
+        }else{
+            getImage(image_link, 'hot', image_name);
+        }
+    }else{
+        imgCount = imgCount-1;
+    }  
 }
+
+function getImageFromGFY(response, name){
+    var page = new JSDOM(response);
+    var link = page.window.document.querySelector(".video > source[type='video/webm']");
+    if(link){
+        var image_link = page.window.document.querySelector(".video > source[type='video/webm']").getAttribute('src');
+       
+       
+        if(type == '/new/'){
+            getImage(image_link, 'new', name);
+        }else{
+            getImage(image_link, 'hot', name);
+        }
+    }else{
+        imgCount = imgCount-1;
+    }  
+}
+
+
+
 
 function getImage(imageurl,type, imagename){
     var ext = imageurl.split(".");
     ext = ext.pop();
-    console.log(ext);
-    mkdirp(type); 
-    got.stream(imageurl).pipe(fs.createWriteStream(type+'/'+imagename+'.'+ext));
+   
+    mkdirp(subreddit+'/'+type, function(err){
+        if (err) console.error(err);
+    }); 
+    imagename = imagename.replace("/", "-");
+    imagename = imagename.replace("’","'");
+    imagename = imagename.replace("’","'");
+    got.stream(imageurl).pipe(fs.createWriteStream(utf8.encode(subreddit+'/'+type+'/'+imagename+'.'+ext))).on('error', error=>console.log(error));
 }
 
 
