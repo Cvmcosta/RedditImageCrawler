@@ -1,14 +1,14 @@
 {
-  "name": "bowsette",
-  "version": "1.0.0",
-  "description": "crawler to get bowsette",
-  "main": "bowsette.js",
+  "name": "redditimagecrawler",
+  "version": "0.8",
+  "description": "crawler to get reddit images",
+  "main": "ric.js",
   "scripts": {
     "test": "test",
-    "start": "node bowsette.js"
+    "start": "node ric.js"
   },
   "author": "cvmcosta",
-  "license": "ISC",
+  "license": "MIT",
   "dependencies": {
     "follow-redirects": "^1.5.8",
     "form-data": "^2.3.2",

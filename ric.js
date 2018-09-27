@@ -1,7 +1,7 @@
-//Crawler prepared to get the bowsette images from multiple sources (imgur/reddit, twitter, 4chan) :3
-//May (probably) generate NSFW imagery (which is what u wanted im sure)
+//Crawler prepared to get the images from reddit's multiple sources (imgur/reddit/GFY) :3
+//May (probably) generate NSFW imagery (which is what u wanted im sure) because of default subreddit
 
-/* (っ◔◡◔)っ ♥ Bowsette ♥  v0.5*/ 
+/* (っ◔◡◔)っ ♥ Bowsette ♥ */ 
 
 
 //import got, http 
