@@ -1,12 +1,9 @@
 <div align="center">
 	<br>
 	<br>
-	<img width="360" src="media/logo.png" alt="RedditImageCrawler">
+	<img width="160" src="media/logo.png" alt="RedditImageCrawler">
 	<br>
-	<br>
-	<br>
-	<br>
-	<br>
+
 </div>
 
 # Get all subreddit images
