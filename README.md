@@ -24,8 +24,8 @@ $ npm install redditimagecrawler
 
 ## Download compiled
 
-- **Linux:** insert link;
-- **Windows:** insert link;  
+- [**Linux**](https://drive.google.com/open?id=1NeY_f4N3FnRJFdJSAnv1xUXc-EKvuTe2)
+- [**Windows**](https://drive.google.com/file/d/1MNg94CKmCahYbqs--DUEW34Ejq02Ye8e/view?usp=sharing)  
 
 ## Usage
 
