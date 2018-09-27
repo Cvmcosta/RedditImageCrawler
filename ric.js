@@ -111,7 +111,7 @@ function parseResponse(response){
                 imgCount = imgCount+1;
                 enterRedditPost(curAdress)
             }
-            else if(curAdress.indexOf('i.imgur.com')!=-1){
+            else if(curAdress.indexOf('imgur.com')!=-1){
                 imgCount = imgCount+1;
                 console.log('Externo (Imgur) - '+element.textContent+' -> '+curAdress);
                 if(type == '/new/'){
