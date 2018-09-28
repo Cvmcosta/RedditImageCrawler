@@ -8,19 +8,13 @@
 
 # Get all subreddit images
 
-***RedditImageCrawler*** ia a tool to automatically retrieve images from any given subreddit.
+***RedditImageCrawler*** is a tool to automatically retrieve images from any given subreddit.
 
 It was created because a friend kept asking for bowsette pics and i am powered by lazyness.
 
 (That also means that the default subreddit is the /r/bowsette, so it most certainly contains NSFW imagery, use with caution)
 
 
-
-## Install
-
-```
-$ npm install redditimagecrawler
-```
 
 ## Download compiled
 
@@ -107,27 +101,6 @@ $ npm install redditimagecrawler
     ./ric a 30
     ```
     
-
-### NodeJs from source
-```js
-const ric = require('redditimagecrawler');
-
-//Name of the subreddit you want to access
-var subreddit = "bowsette";
-
-//Amount of pages you want to go through
-var pageCount = 4;
-
-//Type of sorting (hottest - "/hot/" or newest - "/new/")
-var sort = "/new/";
-
-//Max of album images download per album acessed
-var albumImg = 80;
-
-ric.retrieve(subreddit, pageCount, sort, albumImg);
-
-
-```
 
 ## Compiling
 
