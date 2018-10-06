@@ -100,6 +100,7 @@ function getThem(url){
         .then(response => parseResponse(response.body))
         .catch(error => { if(error.statusCode==429){console.log("TOO MANY REQUESTS ERROR. RETRYING(?) = > "+error.path)}else{console.log(error)} });
 }   
+
 //hanlde initial return (the first page)
 function parseResponse(response){
     if(count > 0){
@@ -112,11 +113,11 @@ function parseResponse(response){
             
             if(curAdress.indexOf('imgur.com')!=-1){
                 if(curAdress.indexOf('/a/')!=-1){    
-                    console.log('Externo (Imgur Album) - '+element.textContent+' -> '+curAdress);
+                    console.log('(Imgur Album) - '+element.textContent+' -> '+curAdress);
                     enterImgurAlbum(curAdress, element.textContent)
                 }
                 else if(curAdress.indexOf('/r/')!=-1){    
-                    console.log('Externo (Imgur Post) - '+element.textContent+' -> '+curAdress);
+                    console.log('(Imgur Post) - '+element.textContent+' -> '+curAdress);
                     enterImgurPost(curAdress, element.textContent)
                 }
                 else{
@@ -127,14 +128,14 @@ function parseResponse(response){
 
                     if(aux_str.indexOf(".")!=-1){
                         
-                        console.log('Externo (Imgur) - '+element.textContent+' -> '+curAdress);
+                        console.log('(Imgur) - '+element.textContent+' -> '+curAdress);
                         if(type == '/new/'){
                             getImage(curAdress, 'new', element.textContent);
                         }else{
                             getImage(curAdress, 'hot', element.textContent);
                         }
                     }else{
-                        console.log('Externo (Imgur Page) - '+element.textContent+' -> '+curAdress);
+                        console.log('(Imgur Page) - '+element.textContent+' -> '+curAdress);
                         enterImgurPage(curAdress, element.textContent)
 
                     }
@@ -144,7 +145,7 @@ function parseResponse(response){
             }
             else if(curAdress.indexOf('gfycat.com')!=-1){
                 
-                console.log('Externo (GFY) - '+element.textContent+' -> '+curAdress);
+                console.log('(GFY) - '+element.textContent+' -> '+curAdress);
                 enterGFYPost(curAdress, element.textContent)
             }
             else if(curAdress.indexOf('/r/')!=-1){
@@ -153,12 +154,12 @@ function parseResponse(response){
                     curAdress = baseurl+curAdress;
                 }
                 
-                console.log('Interno - '+element.textContent+' -> '+curAdress);
+                console.log('(Reddit) - '+element.textContent+' -> '+curAdress);
                 
                 enterRedditPost(curAdress)
             }
             else{
-                console.log('Externo(unsupported) -> '+curAdress);
+                console.log('(Unsupported) -> '+curAdress);
             }
         
         })
@@ -169,7 +170,7 @@ function parseResponse(response){
         }
 
     }else{
-        console.log("IMAGENS: "+imgCount);
+        console.log("Total amount of images downloaded: " + imgCount);
     }
     
 }   
@@ -263,7 +264,7 @@ function getImageFromImgur(response, name){
             aux = response[hashes++]
             auxStr = auxStr+aux;
         }
-        console.log(auxStr);
+
         var jsonImgs = JSON.parse(auxStr);
         
         console.log("\tIMAGE FROM IMGUR POST -> " + name+" -DATA lenght: "+jsonImgs.length);
@@ -283,7 +284,7 @@ function getImageFromImgur(response, name){
         
         } 
     }else{
-        console.log("\tNAO ACHOU HASHES POST "+name);
+        console.log("\tThe hash for the page \'"+ name + "\' wasn't found ");
     }
     
 }
@@ -305,13 +306,11 @@ function getImageFromImgurAlbum(response, name){
             aux = response[hashes++]
             auxStr = auxStr+aux;
         }
-        console.log(auxStr);
-        var jsonImgs = JSON.parse(auxStr);
-        
-        //console.log("TAMANHO: "+jsonAux.length);
-        //console.log("PRIMEIRO: "+jsonAux[0].hash);
 
-        console.log("\tIMAGE FROM IMGUR ALBUM -> " + name+" -DATA lenght: "+jsonImgs.length);
+        var jsonImgs = JSON.parse(auxStr);
+
+        //Idk why this debug code was here, but it doesnt look like an error message, that's why I just commented it
+        //console.log("\tIMAGE FROM IMGUR ALBUM -> " + name+" -DATA lenght: "+jsonImgs.length);
         for(var i = 0; i<jsonImgs.length; i++){
         
             if(imgcounter<=0){
@@ -329,7 +328,7 @@ function getImageFromImgurAlbum(response, name){
         
         } 
     }else{
-        console.log("\tNAO ACHOU HASHES ALBUM "+name);
+        console.log("\tThe hash for the album \'" + name + "\' wasn't found ");
     }
 }
 
@@ -348,13 +347,11 @@ function getImageFromImgurPage(response, name){
             aux = response[hashes++]
             auxStr = auxStr+aux;
         }
-        console.log(auxStr);
+
         var jsonImgs = JSON.parse(auxStr);
         
         console.log("\tIMAGE FROM IMGUR PAGE -> " + name+" -DATA lenght: "+jsonImgs.length);
         for(var i = 0; i<jsonImgs.length; i++){
-        
-        
         
             curAdress = "https://i.imgur.com/"+jsonImgs[i].hash+jsonImgs[i].ext;
             if(type == '/new/'){
@@ -367,7 +364,7 @@ function getImageFromImgurPage(response, name){
         
         } 
     }else{
-        console.log("\tNAO ACHOU HASHES PAGE "+ name);
+        console.log("(Error) The hash for the page \'" + name + "\' wasn't found ");
     }
 }
 
@@ -382,27 +379,6 @@ function getImage(imageurl,type, imagename){
     imagename = imagename.replace("/", "-");
     imagename = imagename.replace("’","'");
     imagename = imagename.replace("’","'");
+    
     got.stream(imageurl).pipe(fs.createWriteStream(utf8.encode(subreddit+'/'+type+'/'+imagename+'.'+ext))).on('error', error=>console.log(error));
 }
-
-
-
-//useful methods
-
-/* 
-printing the response json-
-
-fs.writeFileSync('./data.json', JSON.stringify(response, null, 2) , 'utf-8');
-
-getting Image-
-
-got.stream(imageurl).pipe(fs.createWriteStream('image.jpg')); 
-
-used to create html file with the body of a response-
-
-fs.writeFile('response.html', response, function(err) {
-if(err) {
-    return console.log(err);
-}
-}); 
-*/
