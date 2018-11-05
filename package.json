@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "crawler to get reddit images",
   "main": "ric.js",
+  "bin" : "./ric.js",
   "scripts": {
     "test": "test",
     "start": "node ric.js"
